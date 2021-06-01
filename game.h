@@ -8,9 +8,7 @@ class Card{
     private:
         short cardsuit;
         short cardvalue;
-        
     public:
-
         short suit(){
             return this->cardsuit;
         };
@@ -18,11 +16,9 @@ class Card{
         short value(){
             return this->cardvalue;
         };
-
         std::string cmd_view(){
             return cardvalues[this->cardvalue] + " " + cardsuits[this->cardsuit];
         }
-        
     Card() = default;
     Card(short new_suit, short new_value){
             this->cardsuit = new_suit;
@@ -38,4 +34,29 @@ std::vector<Card> generate_deck(){
         } 
     }
     return new_deck;
-}
+};
+
+class Player{
+    private:
+        std::pair<Card,Card> hand_cards = {};
+        unsigned long long in_game_stack = 0;
+    public:
+        std::string nickname = "";
+        bool have_cards = false;
+        void take_hand_cards(std::pair<Card,Card> new_hand_card){
+            // Проверка на то, что уже есть карты
+            this->hand_cards = new_hand_card;
+        }
+        std::pair<Card,Card> get_hand_cards(){
+            return this->hand_cards;
+        }
+        unsigned long long get_in_game_stack(){
+            return this->in_game_stack;
+        }
+        Player() = default;
+        Player(unsigned long long new_in_game_stack){
+            this->in_game_stack = new_in_game_stack;
+        }
+        
+
+};
