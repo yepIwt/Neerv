@@ -46,9 +46,34 @@ class Deck{
 class Player{
     public:
         std::string nickname;
-        unsigned long int money;
+        unsigned long int money; // $
         Card hand_cards[2];
-        int is_game_rn;
-        int move;
+        bool in_game=false;
+        int move; //round
         int thinks;
+};
+
+class Game{
+    private:
+        Player players[6];
+        Deck deck;
+        int cursor;
+        Card tableCards[5];
+        int pot; // общий банк игры
+        int player_action; // выбор игрока
+        int player_bet; // новая ставка игрока
+        int winner,roundWinner;
+    public:
+        bool add_player(std::string new_nickname, unsigned long int new_stack){
+            bool player_sat_down  = false;
+            for (int i=0; i < 6; i++){
+                if (players[i].in_game != true){ // Есть свободное место?
+                    players[i].nickname = new_nickname; players[i].money = new_stack;
+                    players[i].in_game = true;
+                    player_sat_down = true;
+                }
+            }
+            return player_sat_down;
+        }
+
 };
