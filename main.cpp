@@ -29,5 +29,11 @@ int main(){
     
     //DEBUG
     poker.print_blids_and_dealer();
+    
+    // Deal 2 hand cards
+    poker.deal_cards();
+    // DEBUG
+    poker.print_hand_cards();
+
     return 0;
 }

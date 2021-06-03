@@ -40,6 +40,7 @@ class Deck{
                     cards[i*13+j].value = j;
                 }
             }
+            shuffle();
         }
 };
 
@@ -47,7 +48,7 @@ class Player{
     public:
         std::string nickname;
         unsigned long int money; // $
-        Card hand_cards[2];
+        Card hand_cards[2] = {};
         bool in_game=false;
         int move; //round
         int thinks;
@@ -56,7 +57,7 @@ class Player{
 class Game{
     private:
         std::vector<Player> players;
-        Deck deck;
+        Deck deck1;
         int cursor;
         Card tableCards[5];
         int button_player; // номер игрока из players
@@ -69,13 +70,6 @@ class Game{
     public:
         bool add_player(std::string new_nickname, unsigned long int new_stack){
             bool player_sat_down  = false;
-            // for (int i=0; i < 6; i++){
-            //     if (players[i].in_game != true){ // Есть свободное место?
-            //         players[i].nickname = new_nickname; players[i].money = new_stack;
-            //         players[i].in_game = true;
-            //         player_sat_down = true;
-            //     }
-            // }
             if (players.size() != 6){
                 Player new_player; 
                 new_player.in_game = true; new_player.money = new_stack; new_player.nickname = new_nickname;
@@ -97,5 +91,23 @@ class Game{
             std::cout << "Blinds are (sb/bb):" << std::endl;
             std::cout << players[small_blind_player].nickname << std::endl;
             std::cout << players[big_blind_player].nickname << std::endl;
+        }
+        void deal_cards(){
+            for (int i=0; i < players.size(); i++){
+                players[i].hand_cards[0] = deck1.take_card();
+                players[i].hand_cards[1] = deck1.take_card();
+            }
+        } // DEBUG
+        void print_hand_cards(){
+            for (int i=0; i < players.size(); i++){
+                std::cout << players[i].nickname << " cards: ";
+                std::string hand_card_names = cardsuits[players[i].hand_cards[0].suit];
+                std::string hand_card_value = cardvalues[players[i].hand_cards[0].value];
+
+                std::string hand_card_names1 = cardsuits[players[i].hand_cards[1].suit];
+                std::string hand_card_value1 = cardvalues[players[i].hand_cards[1].value];
+
+                std::cout << hand_card_value << hand_card_names << " " << hand_card_value1 << hand_card_names1 << std::endl;
+            }
         }
 };
