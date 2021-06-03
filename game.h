@@ -63,7 +63,7 @@ class Game{
         int button_player; // номер игрока из players
         int small_blind_player, big_blind_player; // тоже номера
         int game_limit_small_blind = 30; // просто константа для блайнда, потом поменяется
-        int pot; // общий банк игры
+        int pot=0; // общий банк игры
         int player_action; // выбор игрока
         int player_bet; // новая ставка игрока
         int winner,roundWinner;
@@ -86,11 +86,10 @@ class Game{
             small_blind_player = (button_player + 1) % players.size();
             big_blind_player = (button_player + 2) % players.size();
         } // DEBUG
-        void print_blids_and_dealer(){
-            std::cout << "Dealer: " << players[button_player].nickname << std::endl;
-            std::cout << "Blinds are (sb/bb):" << std::endl;
-            std::cout << players[small_blind_player].nickname << std::endl;
-            std::cout << players[big_blind_player].nickname << std::endl;
+        void print_dealer(){
+            std::cout << "Button: " << players[button_player].nickname << std::endl << std::endl;
+            //std::cout << "SB/BB: " << players[small_blind_player].nickname << " ";
+            //std::cout << players[big_blind_player].nickname << std::endl << std::endl;
         }
         void deal_cards(){
             for (int i=0; i < players.size(); i++){
@@ -109,5 +108,15 @@ class Game{
 
                 std::cout << hand_card_value << hand_card_names << " " << hand_card_value1 << hand_card_names1 << std::endl;
             }
+        }
+        std::string bet_small_blind(){
+            pot += game_limit_small_blind;
+            players[small_blind_player].money -= game_limit_small_blind;
+            return players[small_blind_player].nickname;
+        }
+        std::string bet_big_blind(){
+            pot += game_limit_small_blind * 2;
+            players[big_blind_player].money -= game_limit_small_blind * 2;
+            return players[big_blind_player].nickname;
         }
 };
