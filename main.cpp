@@ -3,21 +3,31 @@
 #include <vector>
 #include "game.h"
 
+using std::cin;  using std::cout;  using std::endl;
 
 int main(){
-    std::cout << "Neerv is a nervous poker game. Take care of your nerves! " << std::endl << std::endl;
-    
+    cout << "Neerv is a nervous poker game. Take care of your nerves! " << endl << endl;
     Game poker;
+    
+    // Registration of players
     std::string new_player_name;
     unsigned long int new_player_stack;
     short players_count = 0;
     while (players_count != 5){
-        std::cout << "What name do you want to take? "; std::cin >> new_player_name;
-        std::cout << new_player_name << ", how much money can you spend in this game? "; std::cin >> new_player_stack;
+        cout << "What name do you want to take? "; cin >> new_player_name;
+        cout << new_player_name << ", how much money can you spend in this game? "; cin >> new_player_stack;
         poker.add_player(new_player_name, new_player_stack);
-        std::cout << "Added! " << std::endl << std::endl;
+        cout << "Added! " << endl << endl;
         players_count++;
     };
-    std::cout << "OK. Let's start our game... " << std::endl << std::endl;    
+    cout << "OK. Let's start our game... " << endl << endl;
+
+    // Take a button
+    poker.choose_dealer();
+    // Choose small blind and big blind
+    poker.choose_blinds_players();
+    
+    //DEBUG
+    poker.print_blids_and_dealer();
     return 0;
 }

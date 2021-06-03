@@ -55,10 +55,13 @@ class Player{
 
 class Game{
     private:
-        Player players[6];
+        std::vector<Player> players;
         Deck deck;
         int cursor;
         Card tableCards[5];
+        int button_player; // номер игрока из players
+        int small_blind_player, big_blind_player; // тоже номера
+        int game_limit_small_blind = 30; // просто константа для блайнда, потом поменяется
         int pot; // общий банк игры
         int player_action; // выбор игрока
         int player_bet; // новая ставка игрока
@@ -66,14 +69,33 @@ class Game{
     public:
         bool add_player(std::string new_nickname, unsigned long int new_stack){
             bool player_sat_down  = false;
-            for (int i=0; i < 6; i++){
-                if (players[i].in_game != true){ // Есть свободное место?
-                    players[i].nickname = new_nickname; players[i].money = new_stack;
-                    players[i].in_game = true;
-                    player_sat_down = true;
-                }
+            // for (int i=0; i < 6; i++){
+            //     if (players[i].in_game != true){ // Есть свободное место?
+            //         players[i].nickname = new_nickname; players[i].money = new_stack;
+            //         players[i].in_game = true;
+            //         player_sat_down = true;
+            //     }
+            // }
+            if (players.size() != 6){
+                Player new_player; 
+                new_player.in_game = true; new_player.money = new_stack; new_player.nickname = new_nickname;
+                players.push_back(new_player);
+                player_sat_down = true;
             }
             return player_sat_down;
         }
-
+        void choose_dealer(){
+            srand(time(0));
+            button_player = rand() % players.size();
+        }
+        void choose_blinds_players(){
+            small_blind_player = (button_player + 1) % players.size();
+            big_blind_player = (button_player + 2) % players.size();
+        } // DEBUG
+        void print_blids_and_dealer(){
+            std::cout << "Dealer: " << players[button_player].nickname << std::endl;
+            std::cout << "Blinds are (sb/bb):" << std::endl;
+            std::cout << players[small_blind_player].nickname << std::endl;
+            std::cout << players[big_blind_player].nickname << std::endl;
+        }
 };
