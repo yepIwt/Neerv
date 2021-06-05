@@ -37,6 +37,7 @@ int main(){
 
     //cout << "Setting"
     // Start preflop
+    poker.preflop();
     
     
 

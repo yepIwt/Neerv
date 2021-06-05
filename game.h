@@ -57,6 +57,7 @@ class Player{
 class Game{
     private:
         std::vector<Player> players;
+        std::vector<int> bets;
         Deck deck1;
         int cursor;
         Card tableCards[5];
@@ -68,35 +69,19 @@ class Game{
         int player_bet; // новая ставка игрока
         int winner,roundWinner;
     public:
-        bool add_player(std::string new_nickname, unsigned long int new_stack){
-            bool player_sat_down  = false;
-            if (players.size() != 6){
-                Player new_player; 
-                new_player.in_game = true; new_player.money = new_stack; new_player.nickname = new_nickname;
-                players.push_back(new_player);
-                player_sat_down = true;
-            }
-            return player_sat_down;
-        }
+        //Instruments
         void choose_dealer(){
             srand(time(0));
             button_player = rand() % players.size();
         }
         void choose_blinds_players(){
-            small_blind_player = (button_player + 1) % players.size();
-            big_blind_player = (button_player + 2) % players.size();
-        } // DEBUG
-        void print_dealer(){
-            std::cout << "Button: " << players[button_player].nickname << std::endl << std::endl;
-            //std::cout << "SB/BB: " << players[small_blind_player].nickname << " ";
-            //std::cout << players[big_blind_player].nickname << std::endl << std::endl;
+            small_blind_player = player_next_to_player(button_player);
+            big_blind_player = player_next_to_player(small_blind_player);
         }
-        void deal_cards(){
-            for (int i=0; i < players.size(); i++){
-                players[i].hand_cards[0] = deck1.take_card();
-                players[i].hand_cards[1] = deck1.take_card();
-            }
-        } // DEBUG
+        
+        int player_next_to_player(int next_to){
+            return (next_to + 1) % players.size();
+        }
         void print_hand_cards(){
             for (int i=0; i < players.size(); i++){
                 std::cout << players[i].nickname << " cards: ";
@@ -109,6 +94,25 @@ class Game{
                 std::cout << hand_card_value << hand_card_names << " " << hand_card_value1 << hand_card_names1 << std::endl;
             }
         }
+        void bets_are_equal(){
+            std::set<int> setted_bets(this->bets.begin(), this->bets.end());
+            if (setted_bets.size() == 1){
+                return true;
+            } else {
+                return false;
+            }
+        }
+        //Gameplay
+        bool add_player(std::string new_nickname, unsigned long int new_stack){
+            bool player_sat_down  = false;
+            if (players.size() != 6){
+                Player new_player; 
+                new_player.in_game = true; new_player.money = new_stack; new_player.nickname = new_nickname;
+                players.push_back(new_player);
+                player_sat_down = true;
+            }
+            return player_sat_down;
+        }
         std::string bet_small_blind(){
             pot += game_limit_small_blind;
             players[small_blind_player].money -= game_limit_small_blind;
@@ -117,6 +121,21 @@ class Game{
         std::string bet_big_blind(){
             pot += game_limit_small_blind * 2;
             players[big_blind_player].money -= game_limit_small_blind * 2;
+            bind = player_next_to_playerz(big_blind_player);
             return players[big_blind_player].nickname;
+        }
+        void deal_cards(){
+            for (int i=0; i < players.size(); i++){
+                players[i].hand_cards[0] = deck1.take_card();
+                players[i].hand_cards[1] = deck1.take_card();
+            }
+        }
+        void print_dealer(){
+            std::cout << "Button: " << players[button_player].nickname << std::endl << std::endl;
+            //std::cout << "SB/BB: " << players[small_blind_player].nickname << " ";
+            //std::cout << players[big_blind_player].nickname << std::endl << std::endl;
+        }
+        void preflop(){
+            //while (bets_are_equal() != true)
         }
 };
