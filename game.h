@@ -4,7 +4,7 @@
 #include <iostream>
 #include <algorithm>
 #include <ctime>
-
+#include <set>
 const std::string cardsuits[4] = {"Черви","Вини","Буби","Крести"};
 const std::string cardvalues[13] = {"2","3","4","5","6","7","8","9","10","Валет","Дама","Король","Туз"};
 
@@ -57,7 +57,7 @@ class Player{
 class Game{
     private:
         std::vector<Player> players;
-        std::vector<int> bets;
+        std::vector<int> bets{};
         Deck deck1;
         int cursor;
         Card tableCards[5];
@@ -68,6 +68,7 @@ class Game{
         int player_action; // выбор игрока
         int player_bet; // новая ставка игрока
         int winner,roundWinner;
+        int LastBet=0;
     public:
         //Instruments
         void choose_dealer(){
@@ -78,28 +79,20 @@ class Game{
             small_blind_player = player_next_to_player(button_player);
             big_blind_player = player_next_to_player(small_blind_player);
         }
-        
         int player_next_to_player(int next_to){
             return (next_to + 1) % players.size();
         }
-        void print_hand_cards(){
-            for (int i=0; i < players.size(); i++){
-                std::cout << players[i].nickname << " cards: ";
-                std::string hand_card_names = cardsuits[players[i].hand_cards[0].suit];
-                std::string hand_card_value = cardvalues[players[i].hand_cards[0].value];
-
-                std::string hand_card_names1 = cardsuits[players[i].hand_cards[1].suit];
-                std::string hand_card_value1 = cardvalues[players[i].hand_cards[1].value];
-
-                std::cout << hand_card_value << hand_card_names << " " << hand_card_value1 << hand_card_names1 << std::endl;
-            }
-        }
-        void bets_are_equal(){
+        bool bets_are_equal(){
             std::set<int> setted_bets(this->bets.begin(), this->bets.end());
             if (setted_bets.size() == 1){
                 return true;
             } else {
                 return false;
+            }
+        }
+        void make_zero_bets(){
+            for (int i=0; i < players.size(); i++){
+                bets.push_back(0);
             }
         }
         //Gameplay
@@ -116,12 +109,19 @@ class Game{
         std::string bet_small_blind(){
             pot += game_limit_small_blind;
             players[small_blind_player].money -= game_limit_small_blind;
+
+            bets[small_blind_player] += game_limit_small_blind;
+            
             return players[small_blind_player].nickname;
         }
         std::string bet_big_blind(){
             pot += game_limit_small_blind * 2;
             players[big_blind_player].money -= game_limit_small_blind * 2;
-            bind = player_next_to_playerz(big_blind_player);
+            cursor = player_next_to_player(big_blind_player);
+            LastBet = game_limit_small_blind * 2;
+            
+            bets[big_blind_player] += game_limit_small_blind * 2;
+
             return players[big_blind_player].nickname;
         }
         void deal_cards(){
@@ -129,13 +129,47 @@ class Game{
                 players[i].hand_cards[0] = deck1.take_card();
                 players[i].hand_cards[1] = deck1.take_card();
             }
+            make_zero_bets();
         }
         void print_dealer(){
             std::cout << "Button: " << players[button_player].nickname << std::endl << std::endl;
             //std::cout << "SB/BB: " << players[small_blind_player].nickname << " ";
             //std::cout << players[big_blind_player].nickname << std::endl << std::endl;
         }
+        void print_hand_cards(){
+            for (int i=0; i < players.size(); i++){
+                std::cout << players[i].nickname << " cards: ";
+                std::string hand_card_names = cardsuits[players[i].hand_cards[0].suit];
+                std::string hand_card_value = cardvalues[players[i].hand_cards[0].value];
+
+                std::string hand_card_names1 = cardsuits[players[i].hand_cards[1].suit];
+                std::string hand_card_value1 = cardvalues[players[i].hand_cards[1].value];
+
+                std::cout << hand_card_value << hand_card_names << " " << hand_card_value1 << hand_card_names1 << std::endl;
+            }
+        }
+        void print_last_bet(){
+            std::cout << "LastBet is " << LastBet << std::endl;
+        }
+        int get_player_action(){
+            while (player_action != 1 && player_action != 2 && player_action != 3){
+                std::cin >> player_action;
+                if (player_action != 1 && player_action != 2 && player_action != 3)
+                    std::cout << std::endl << "Idk that action. pls correct your answer: ";
+            }
+            return player_action;
+        }
+        void makeBets(){
+            while (bets_are_equal() != true){
+                print_last_bet();
+                std::cout << players[cursor].nickname << ", do an action: (1) Fold; (2) Bet; (3) Call: ";
+                player_action = get_player_action();
+                std::cout << "Player action is " << player_action;
+                player_action = 0;
+            }
+        }
         void preflop(){
+            makeBets();
             //while (bets_are_equal() != true)
         }
 };
