@@ -58,6 +58,7 @@ class Game{
     private:
         std::vector<Player> players;
         std::vector<int> bets{};
+        int folded_bets = 0; // Ticket 2: а почему бы не вектор от пары(ник,последняя ставка)?
         Deck deck1;
         int cursor;
         Card tableCards[5];
@@ -68,6 +69,7 @@ class Game{
         int player_action; // выбор игрока
         int player_bet; // новая ставка игрока
         int winner,roundWinner;
+        bool all_in_initiated = false; // если кто-то пойдет ва-банк
     public:
         //Instruments
         void choose_dealer(){
@@ -158,17 +160,71 @@ class Game{
             }
             return player_action;
         }
+        int ask_new_bet(){
+            int new_player_bet;
+            std::cin >> new_player_bet;
+            if (new_player_bet > players[cursor].money){
+                std::cout << "You don't have enough money. Enter valid bet: ";
+                ask_new_bet();
+            }
+            if (new_player_bet < player_bet){
+                std::cout << "Last bet: " << player_bet << ". Last bet > new bet. Eneter valid bet: ";
+                ask_new_bet();
+            }
+            return new_player_bet;
+        }
+        void player_folds(){
+            folded_bets += bets[cursor];
+            bets.erase(bets.begin() + cursor);
+            players.erase(players.begin() + cursor);
+        }
+        void player_bets(){
+            int previous_bet = player_bet;
+            if (player_bet >= players[cursor].money){
+                std::cout << players[cursor].nickname << " all-ined..." << std::endl;
+                bets[cursor] += players[cursor].money;
+                players[cursor].money = 0;
+                all_in_initiated = true;
+            } else {
+                std::cout << "Ok, " << players[cursor].nickname << ", you have " <<  players[cursor].money << ", how much you can bet? ";
+                player_bet = ask_new_bet();
+                if (previous_bet == player_bet){
+                    std::cout << players[cursor].nickname << " calls..."<< std::endl;
+                } else {
+                    std::cout << players[cursor].nickname << " bets " << player_bet << "..." << std::endl;
+                }
+            }
+            cursor = player_next_to_player(cursor);
+        }
+        void player_calls(){
+        }
+        void handle_player_action(){
+            if (player_action == 1)
+                player_folds();
+            if (player_action == 2)
+                player_bets();
+            if (player_action == 3)
+                player_calls();
+        }
         void makeBets(){
-            while (bets_are_equal() != true){
+            while (bets_are_equal() != true && all_in_initiated == false){
                 print_last_bet();
-                std::cout << players[cursor].nickname << ", do an action: (1) Fold; (2) Bet; (3) Call: ";
+                if (player_bet >= players[cursor].money){
+                    std::cout << players[cursor].nickname << ", do an action (1) Fold; (2) All-In: ";
+                } else { 
+                    std::cout << players[cursor].nickname << ", do an action: (1) Fold; (2) Bet; (3) Call: ";
+                }
                 player_action = get_player_action();
-                std::cout << "Player action is " << player_action;
-                //scursor = player_next_to_player(cursor);
+                handle_player_action();
+
+                // Next player
+                if (cursor >= players.size()){ cursor = 0; } // fix me
+            }
+            if (all_in_initiated){
+                // what?
             }
         }
         void preflop(){
             makeBets();
-            //while (bets_are_equal() != true)
         }
 };
