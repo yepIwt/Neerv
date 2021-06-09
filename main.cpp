@@ -26,11 +26,11 @@ int main(){
     // Registration of players
     //poker = normal_player_registration(poker);
 
-    poker.add_player("Max",100);
-    poker.add_player("Tim", 100);
-    poker.add_player("Uli", 100);
-    poker.add_player("Nick", 100);
-    poker.add_player("Dim", 100);
+    poker.add_player("Max",1000);
+    poker.add_player("Tim", 2000);
+    poker.add_player("Uli", 3000);
+    poker.add_player("Nick", 4000);
+    poker.add_player("Dim", 5000);
     
     cout << "OK. Let's start our game... " << endl << endl;
 
