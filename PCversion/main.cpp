@@ -38,14 +38,16 @@ int main(){
     poker.choose_dealer();
     // Choose small blind and big blind
     poker.choose_blinds_players();
-    poker.print_dealer();
+    std::cout << "Button: " << poker.get_dealer_nick() << std::endl << std::endl;
     
     // Deal 2 hand cards
-    cout << "Now you got hand cards!" << endl;
+    //cout << "Now you got hand cards!" << endl;
     poker.deal_cards();
 
     cout << poker.bet_small_blind() << " posts the small blind..." << endl;
     cout << poker.bet_big_blind() << " posts the big blind..." << endl;
+
+    cout << endl;
 
     //cout << "Setting"
     // Start preflop

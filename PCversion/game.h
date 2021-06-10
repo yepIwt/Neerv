@@ -66,7 +66,6 @@ class Game{
         int button_player; // номер игрока из players
         int small_blind_player, big_blind_player; // тоже номера
         int game_limit_small_blind = 30; // просто константа для блайнда, потом поменяется
-        int pot=0; // общий банк игры
         int player_action; // выбор игрока
         int player_bet; // новая ставка игрока
         int winner,roundWinner;
@@ -85,19 +84,20 @@ class Game{
             return (next_to + 1) % players.size();
         }
         bool bets_are_equal(){
-            std::set<int> setted_bets(this->bets.begin(), this->bets.end());
-            if (setted_bets.size() == 1){
+            std::set<int> setted_bets(bets.begin(), bets.end());
+            if (setted_bets.size() == 1)
                 return true;
-            } else {
-                return false;
-            }
+            return false;
         }
         bool all_in_completed(){ // Я не знаю как назвать эту функцию, для меня важен смысл функции
+            // debug
             std::cout << "ALL_IN_COMPLETED RULE: ";
             for (int i=0; i < players.size(); i++){
                 std::cout << bets[i] << " ";
             }
             std::cout << std::endl;
+            
+            // RULE
             for (int i=0; i < players.size(); i++){
                 if (bets[i] == all_in_initiated){
                     continue;
@@ -112,37 +112,24 @@ class Game{
             return true;
         }
         void make_zero_bets(){
-            for (int i=0; i < players.size(); i++){
+            for (int i=0; i < players.size(); i++)
                 bets.push_back(0);
-            }
         }
-        //Gameplay
-        bool add_player(std::string new_nickname, unsigned long int new_stack){
-            bool player_sat_down  = false;
-            if (players.size() != 6){
-                Player new_player; 
-                new_player.in_game = true; new_player.money = new_stack; new_player.nickname = new_nickname;
-                players.push_back(new_player);
-                player_sat_down = true;
-            }
-            return player_sat_down;
+        void add_player(std::string new_nickname, int new_stack){
+            Player new_player; 
+            new_player.in_game = true; new_player.money = new_stack; new_player.nickname = new_nickname;
+            players.push_back(new_player);
         }
         std::string bet_small_blind(){
-            pot += game_limit_small_blind;
             players[small_blind_player].money -= game_limit_small_blind;
-
-            bets[small_blind_player] += game_limit_small_blind;
-            
+            bets[small_blind_player] += game_limit_small_blind;            
             return players[small_blind_player].nickname;
         }
         std::string bet_big_blind(){
-            pot += game_limit_small_blind * 2;
             players[big_blind_player].money -= game_limit_small_blind * 2;
-            cursor = player_next_to_player(big_blind_player);
             player_bet = game_limit_small_blind * 2;
-            
             bets[big_blind_player] += game_limit_small_blind * 2;
-
+            cursor = player_next_to_player(big_blind_player);
             return players[big_blind_player].nickname;
         }
         void deal_cards(){
@@ -152,10 +139,8 @@ class Game{
             }
             make_zero_bets();
         }
-        void print_dealer(){
-            std::cout << "Button: " << players[button_player].nickname << std::endl << std::endl;
-            //std::cout << "SB/BB: " << players[small_blind_player].nickname << " ";
-            //std::cout << players[big_blind_player].nickname << std::endl << std::endl;
+        std::string get_dealer_nick(){
+            return players[button_player].nickname;
         }
         void print_hand_cards(){
             for (int i=0; i < players.size(); i++){
@@ -169,46 +154,64 @@ class Game{
                 std::cout << hand_card_value << hand_card_names << " " << hand_card_value1 << hand_card_names1 << std::endl;
             }
         }
-        void print_last_bet(){
-            std::cout << "LastBet is " << player_bet << std::endl;
+        int calc_pot(){
+            int pot=0;
+            for (int bet : bets)
+                pot += bet;
+            pot += folded_bets;
+            return pot
+        }
+        void print_players_stack(){
+            std::cout << "In " << players[cursor].nickname <<"'s stack: ";
+            std::cout << players[cursor].money << ". ";
         }
         int get_player_action(){
             std::cin >> player_action; // Ticket 1: Если ввести char, а не int, то случится ka-boom
             while (player_action != 1 && player_action != 2 && player_action != 3 && player_action != 4){
                 std::cout << "Idk that action. pls correct your answer: ";
-                get_player_action();
+                std::cin >> player_action;
             }
             return player_action;
         }
         int ask_new_bet(){
-            int new_player_bet;
+            int new_player_bet=0;
             std::cin >> new_player_bet;
-            if (new_player_bet > players[cursor].money){
-                std::cout << "You don't have enough money. Enter valid bet: ";
-                ask_new_bet();
-            }
-            if (new_player_bet < player_bet){
-                std::cout << "Last bet: " << player_bet << ". Last bet > new bet. Eneter valid bet: ";
-                ask_new_bet();
-            }
+            while (new_player_bet > players[cursor].money || new_player_bet < player_bet){
+                std::cout << "Eneter valid bet: "; std::cin >> new_player_bet;
+            } 
             return new_player_bet;
         }
         bool ask_if_fold_whenever_all_in(){ // true = fold. false = all-ined
             std::cin >> player_action;
             while (player_action != 1 && player_action != 2){
                 std::cout << "Are you nervous right now? Enter VALID action: ";
-                ask_if_fold_whenever_all_in();
+                std::cin >> player_action;
             }
             if (player_action == 1) {return true;} else {return false;}
         }
-        void player_folds(){
-            folded_bets += bets[cursor];
-            bets.erase(bets.begin() + cursor);
-            players.erase(players.begin() + cursor);
+        // Просто действия пользователя в инфинитиве
+        void bet(int howmch){
+            bets[cursor] += howmch;
+            players[cursor].money -= howmch;
         }
+        void call(){
+            bet(player_bet);
+        }
+        void fold(){
+            folded_bets += bets[cursor];
+            players.erase(players.begin() + cursor);
+            bets.erase(bets.begin() + cursor);
+            if (cursor >= players.size()){ cursor = 0; }
+        }
+        void all_in(){
+            bets[cursor] += players[cursor].money;
+            players[cursor].money = 0;
+            all_in_initiated = bets[cursor];
+        }
+        //===========================================
         void player_bets(){
             int previous_bet = player_bet;
-            std::cout << "Ok, " << players[cursor].nickname << ", you have " <<  players[cursor].money << ", how much you can bet? ";
+            std::cout << "Yor bank is " <<  players[cursor].money << "$. Enter new bet: ";
             player_bet = ask_new_bet();
             if (player_bet == players[cursor].money){
                 player_signing_an_allin();
@@ -218,52 +221,64 @@ class Game{
                 } else {
                     std::cout << players[cursor].nickname << " bets " << player_bet << "..." << std::endl;
                 }
-                cursor = player_next_to_player(cursor);
             }
-            
+            bets[cursor] += player_bet;
+            players[cursor].money -= player_bet;
+            cursor = player_next_to_player(cursor);
         }
         void player_calls(){
+            while (player_bet > players[cursor].money){
+                std::cout << "You can't call. You don't have enough money!" << std::endl;
+                print_players_stack();
+                std::cout << "Do an action (1) Fold; (4) All-In";
+                player_action = ask_if_fold_whenever_all_in();
+            }
+
+            bets[cursor] += player_bet;
+            players[cursor].money -= player_bet;
+            cursor = player_next_to_player(cursor);
         }
         void player_signing_an_allin(){
             std::cout << players[cursor].nickname << " all-ined..." << std::endl;
             bets[cursor] += players[cursor].money;
             all_in_initiated = bets[cursor];
             players[cursor].money = 0;
-            cursor = player_next_to_player(cursor);
+            //cursor = player_next_to_player(cursor);
         }
         void handle_player_action(){
             if (player_action == 1)
-                player_folds();
+                fold();
             if (player_action == 2)
                 player_bets();
             if (player_action == 3)
-                player_calls();
+                call();
             if (player_action == 4)
                 player_signing_an_allin();
         }
         void makeBets(){
 
             while (bets_are_equal() != true && all_in_initiated == 0){
-                print_last_bet();
+                std::cout << "Last Bet: " << player_bet << "$" << std::endl;
+                std::cout << "POT: " << calc_pot() << std::endl;
+                print_players_stack();
+                std::cout << "Do an action: (1) Fold ";
                 if (player_bet >= players[cursor].money){
-                    std::cout << players[cursor].nickname << ", do an action (1) Fold; (4) All-In: ";
+                    std::cout << "(4) All-In: ";
                 } else { 
-                    std::cout << players[cursor].nickname << ", do an action: (1) Fold; (2) Bet; (3) Call: ";
+                    std::cout << "(2) Bet (3) Call: ";
                 }
                 player_action = get_player_action();
                 handle_player_action();
-
-                // Check out of players
-                if (cursor >= players.size()){ cursor = 0; } // fix me
             }
 
             while (all_in_completed() != true){
                 std::cout << "===== ALL-IN GAME. ALL-IN BET: " << all_in_initiated << std::endl;
-                std::cout << "In " << players[cursor].nickname <<"'s stack: ";
-                std::cout << players[cursor].money << ". Action: (1) Fold; (2) All-In: ";
+                print_pot();
+                print_players_stack();
+                std::cout <<  "Do an action: (1) Fold; (2) All-In: ";
                 bool he_folds = ask_if_fold_whenever_all_in();
                 if (he_folds){
-                    player_folds();
+                    fold();
                 } else {
                     if ( (bets[cursor] + players[cursor].money) < all_in_initiated){ // если у него не хватает на олл-ин
                         bets[cursor] += players[cursor].money;
