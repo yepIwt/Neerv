@@ -64,6 +64,9 @@ class Game:
 	def give_func_to_bet(self, argfunc):
 		self.ask_new_bet = argfunc
 
+	def curr_player(self):
+		return self.players[self.cursor]
+
 	def player_next_to(self, next_to: int) -> int:
 		return (next_to + 1) % len(self.players)
 
@@ -85,16 +88,16 @@ class Game:
 			return True
 		return False
 
-	def all_in_rule_completed(self) -> bool:
-		#debug
-		print("ALL IN COMPLETED", self.bets)
-		for bet_i in range(self.bets):
+	def all_in_completed(self) -> bool:
+		#print("========ALL IN COMPLETED:", self.bets)
+		for bet_i in range(len(self.bets)):
 			if self.bets[bet_i] == self.all_in_bet:
-				pass
-			elif self.players[bet_i].money == 0:
-				pass
+				continue
 			else:
-				return False
+				if self.players[bet_i].money == 0:
+					continue
+				else:
+					return False
 		return True
 
 	def make_zero_bets(self) -> None:
@@ -124,69 +127,82 @@ class Game:
 			pot += fold_bet[1]
 		return pot
 
-	def player_stack_info(self):
-		string = f"In {self.players[self.cursor].nickname}'s stack: {self.players[self.cursor].money}"
-		return string
+	def avaliable_player_actions(self):
+		if self.all_in_bet:
+			if self.all_in_bet - self.bets[self.cursor] > self.players[self.cursor].money:
+				return [1,4]
+			return [1,3]
+		elif self.players[self.cursor].money < self.player_bet:
+			return [1,4]
+		else:
+			return [1,2,3,4]
 
 	async def player_bets(self):
 		prev_bet = self.player_bet
-		await self.print_cout(f"Your bank is {self.players[self.cursor].money}$. Type /bet INT to bet")
+		await self.print_cout(f"Твой стек: {self.curr_player().money}$. Наберите /bet INT для того чтобы поставить")
 		self.player_bet = await self.ask_new_bet()
-		if self.player_bet == self.players[self.cursor].money:
-			await self.print_cout(f"{self.players[self.cursor].nickname} all-ined...")
-			self.all_in()
-		elif self.player_bet == prev_bet:
-			await self.print_cout(f"{self.players[self.cursor].nickname} calls...")
+		if self.player_bet == self.curr_player().money:
+			await self.all_in()
 		else:
-			await self.print_cout(f"{self.players[self.cursor].nickname} bets {self.player_bet}...")
-		self.bet(self.player_bet)
-		self.cursor = self.player_next_to(self.cursor)
-
-	async def player_calls(self):
-		while self.player_bet > self.players[self.cursor].money:
-			await self.print_cout("You can't call. You don't have enough money!")
-			await self.print_cout(self.player_stack_info())
-			await self.print_cout("Type /action INT (only fold or allin)")
-			self.player_action = self.get_player_action()
-			await self.handle_player_action()
+			if self.player_bet == prev_bet:
+				await self.print_cout(f"{self.curr_player().nickname} коллирует...")
+			else:
+				await self.print_cout(f"{self.curr_player().nickname} ставит {self.player_bet}...")
+			self.bet(self.player_bet)
+			self.cursor = self.player_next_to(self.cursor)
 
 	def bet(self, howmch: int):
 		self.bets[self.cursor] += howmch
 		self.players[self.cursor].money -= howmch
 
-	def call(self):
-		self.bet(self.player_bet)
+	async def call(self):
+		offset = self.all_in_bet or self.player_bet
+		self.players[self.cursor].money -= offset - self.bets[self.cursor]
+		self.bets[self.cursor] += offset - self.bets[self.cursor]
+		await self.print_cout(f"{self.curr_player().nickname} calls...")
+		self.cursor = self.player_next_to(self.cursor)
 
-	def fold(self):
+	async def fold(self):
 		self.folded_bets.append(
-			(self.players[self.cursor].nickname,self.bets[self.cursor])
+			(self.curr_player().nickname, self.bets[self.cursor])
 		)
+		await self.print_cout(f"{self.curr_player().nickname} фолдит...")
 		self.players.pop(self.cursor)
 		self.bets.pop(self.cursor)
 		if self.cursor >= len(self.players): self.cursor = 0
 
-	def all_in(self):
-		self.bets[self.cursor] += self.players[self.cursor].money
+	async def all_in(self):
+		self.bets[self.cursor] += self.curr_player().money
+		if not self.all_in_bet:
+			self.all_in_bet = self.curr_player().money
 		self.players[self.cursor].money = 0
-		self.all_in_bet = self.bets[self.cursor]
+		await self.print_cout(f"{self.curr_player().nickname} идёт олл-ин...")
+		self.cursor = self.player_next_to(self.cursor)
 
-	async def handle_player_action(self):
-		if self.player_action == 1:
-			await self.print_cout(f"{self.players[self.cursor].nickname} folds...")
-			self.fold()
-		elif self.player_action == 2:
+	async def handle_player_action(self, act: int):
+		if act == 1:
+			#await self.print_cout(f"{self.players[self.cursor].nickname} folds...")
+			await self.fold()
+		elif act == 2:
 			await self.player_bets()
-		elif self.player_action == 3:
-			await self.player_calls()
-		elif self.player_action == 4:
-			await self.print_cout(f"{self.players[self.cursor].nickname} all-ined...")
-			self.all_in()
+		elif act == 3:
+			await self.call()
+		elif act == 4:
+			await self.all_in()
 
 	async def makeBets(self):
 		while self.bets_are_equal() != True and not self.all_in_bet:
-			await self.print_cout(f"LastBet: {self.player_bet}$")
-			await self.print_cout(f"Pot: {self.calc_pot()}$")
-			await self.print_cout("Type /action INT to action. (1) fold (2) bet (3) call (4) all-in")
-			self.player_action = await self.get_player_action()
-			await self.handle_player_action()
-		await self.print_cout("Торги окончены")
+			await self.print_cout(f"Последняя ставка: {self.player_bet}$")
+			#await self.print_cout(f"Pot: {self.calc_pot()}$")
+			await self.print_cout(f"Текущий игрок - {self.curr_player().nickname}\nТвой стек: {self.curr_player().money}")
+			await self.print_cout(f"Используй команду /action INT для взаимодействия. Доступные для тебя хода: {self.avaliable_player_actions()}")
+			act = await self.get_player_action()
+			await self.handle_player_action(act)
+
+		while not self.all_in_completed():
+			to_call = self.all_in_bet - self.bets[self.cursor]
+			await self.print_cout(f"Текущий игрок - {self.curr_player().nickname}\nТвой стек: {self.curr_player().money}. Для колла: {to_call}")
+			await self.print_cout(f"Используй команду /action INT для взаимодействия. Доступные для тебя хода: {self.avaliable_player_actions()}")
+			act = await self.get_player_action()
+			await self.handle_player_action(act)
+		await self.print_cout("==============Торги окончены!==============")
