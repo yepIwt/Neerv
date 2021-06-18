@@ -42,15 +42,13 @@ def input_action():
 def bet(howmch: int):
 	global FOLDED_BETS, BETS, CURSOR
 	BETS[CURSOR] += howmch
+	MONEY[CURSOR] -= howmch
 
 def call():
-	global FOLDED_BETS, BETS, CURSOR, ALL_IN_BET
-	if not ALL_IN_BET:
-		MONEY[CURSOR] -= PLAYER_BET - BETS[CURSOR]
-		BETS[CURSOR] += PLAYER_BET - BETS[CURSOR]
-	else:
-		MONEY[CURSOR] -= ALL_IN_BET - BETS[CURSOR]
-		BETS[CURSOR] += ALL_IN_BET - BETS[CURSOR]
+	global FOLDED_BETS, BETS, CURSOR, ALL_IN_BET, PLAYER_BET
+	offset = ALL_IN_BET or PLAYER_BET
+	MONEY[CURSOR] -= offset - BETS[CURSOR]
+	BETS[CURSOR] += offset - BETS[CURSOR]
 	CURSOR = next(CURSOR)
 
 def fold():
@@ -58,6 +56,7 @@ def fold():
 	FOLDED_BETS += BETS[CURSOR]
 	#players.erase
 	BETS.pop(CURSOR)
+	MONEY.pop(CURSOR)
 	print("Player folds...")
 	if CURSOR >= len(BETS): CURSOR = 0
 
@@ -75,7 +74,7 @@ def player_bets():
 	# your bank is ..
 	print(f'[PLAYER_BETS] Your bank is {MONEY[CURSOR]}')
 	PLAYER_BET = int(input('Enter bet: '))
-	while PLAYER_BET > MONEY[CURSOR] or PLAYER_BET < PLAYER_BET:
+	while PLAYER_BET > MONEY[CURSOR] or PLAYER_BET < prev_bet:
 		PLAYER_BET = int(input('Enter valid bet: '))
 
 	if PLAYER_BET == MONEY[CURSOR]:
@@ -127,7 +126,7 @@ def makeBets():
 		print("////////PLAYERS: ", BETS)
 		print("////////PLAYER:  CURSOR: , ", CURSOR)
 		to_call = ALL_IN_BET - BETS[CURSOR]
-		print(f"Your bank is {MONEY[CURSOR]}. To call: {to_call}",)
+		print(f"Your bank is {MONEY[CURSOR]}. To call: {to_call}")
 		player_action = input_action()
 		handle_action(player_action)
 
