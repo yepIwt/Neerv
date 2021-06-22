@@ -3,17 +3,28 @@
 	Neerv, 2021. yepIwt
 """
 import random
+from thpoker.core import Cards, Combo, Hand, Table
 
-class Card:
+CARDSUITS = ["Черви","Вини","Буби","Крести"]
+CARDVALUES = ["2","3","4","5","6","7","8","9","10","Валет","Дама","Король","Туз"]
+SHORTSUI = ['h','s','d','c']
+SHORTVAL = ['2','3','4','5','6','7','8','9','T','J','Q','K','A']
 
-	def __init__(self, val: int, suit: int) -> None:
+class MyCard:
+
+	def __init__(self, suit: int, val: int) -> None:
 		self.value = val
 		self.suit = suit
 
-class Deck:
+    def to_russian(self):
+        global CARDSUITS, CARDVALUES
+        return CARDVALUES[self.value] + " " + CARDSUITS[self.suit]
+    
+    def __str__(self):
+        global SHORTSUI, SHORTVAL
+        return SHORTVAL[self.value] + SHORTSUI[self.suit]
 
-	cardsuits = ["Черви","Вини","Буби","Крести"]
-	cardvalues = ["2","3","4","5","6","7","8","9","10","Валет","Дама","Король","Туз"]
+class Deck:
 
 	def __init__(self):
 		self._cards = []
@@ -23,10 +34,13 @@ class Deck:
 	def create_deck(self):
 		for new_suit in range(4):
 			for new_value in range(13):
-				self._cards.append(Card(new_suit, new_value))
+				self._cards.append(MyCard(new_suit, new_value))
 
 	def shuffle(self):
 		random.shuffle(self._cards)
+
+    def take_hand_cards(self):
+        return self._cards.pop(), self._cards.pop()
 
 	def take_card(self):
 		return self._cards.pop()
@@ -39,6 +53,28 @@ class Player:
 
 	def take_2_cards(self, cards:tuple):
 		self._handcards = cards
+
+class GameTable:
+
+    def __init__(self):
+        self.cards_on_table = []
+
+    def place_one_card(self, card: MyCard):
+        self.cards_on_table.append(card)
+    
+    def to_russian(self):
+        russian_cards = []
+        for cl_card in self.cards_on_table:
+            russian_cards.append(cl_card.to_russian())
+        return russian_cards
+    
+    def __str__(self):
+        string = ""
+        for cl_card in self.cards_on_table:
+            string += str(cl_card) + "/"
+        string = string[:-1]
+        return string
+
 
 class Game:
 
