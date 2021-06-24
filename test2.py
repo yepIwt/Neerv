@@ -67,6 +67,7 @@ async def create_game(message: types.Message):
 	await poker.preflop()
 	await poker.flop()
 	await poker.turn()
+	await poker.river()
 
 @dp.message_handler(commands=['action'])
 async def get_action(message: types.Message):

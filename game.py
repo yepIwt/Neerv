@@ -19,6 +19,7 @@ class MyCard:
 	def to_russian(self):
 		global CARDSUITS, CARDVALUES
 		return CARDVALUES[self.value] + " " + CARDSUITS[self.suit]
+
 	def __str__(self):
 		global SHORTSUI, SHORTVAL
 		return SHORTVAL[self.value] + SHORTSUI[self.suit]
@@ -49,6 +50,7 @@ class Player:
 	def __init__(self, nickname: str, money: int):
 		self.nickname = nickname
 		self.money = money
+		self._handcards = []
 
 	def take_2_cards(self, cards:tuple):
 		self._handcards = cards
@@ -91,6 +93,7 @@ class Game:
 		self.cursor = 0
 		self.old_bets = []
 		self.players_actions = []
+		self.table = None
 
 	def give_func_to_ask(self, argfunc):
 		self.get_player_action = argfunc
@@ -275,6 +278,13 @@ class Game:
 		while self.bets_and_actions_are_clear() or not self.bets_are_equal() and not self.all_in_bet:
 			await self.print_cout(f"Последняя ставка: {self.player_bet}$")
 			#await self.print_cout(f"Pot: {self.calc_pot()}$")
+			if self.table:
+				#hand cards
+				first = self.curr_player()._handcards[0].to_russian()
+				second = self.curr_player()._handcards[1].to_russian() 
+				await self.print_cout(f"Карты в руках: {first} | {second}")
+				#table cards
+				await self.print_cout(self.table.to_russian())
 			await self.print_cout(f"Текущий игрок - {self.curr_player().nickname}\nТвой стек: {self.curr_player().money}")
 			await self.print_cout(f"Используй команду /action INT для взаимодействия. Доступные для тебя хода: {self.avaliable_player_actions()}")
 			act = await self.get_player_action()
@@ -284,7 +294,7 @@ class Game:
 			await self.all_in_makeBets()
 
 		await self.print_cout("==============Торги окончены!==============")
-	
+
 	def revert_bets_and_actions(self):
 		self.all_in_bet = 0
 		self.player_bet = 0
@@ -292,7 +302,7 @@ class Game:
 		self.cursor = self.button_player
 
 	async def preflop(self):
-		await self.print_cout("=PREFLOP::Старт=")
+		await self.print_cout("=PREFLOP=")
 		self.make_zero_bets()
 		self.place_zero_in_players_actions()
 		await self.print_cout(f"{self.bet_small_blind()} ставит малый блайнд...")
@@ -303,24 +313,36 @@ class Game:
 		await self.makeBets()
 
 		self.revert_bets_and_actions()
-		await self.print_cout("=PREFLOP::Конец=")
 
 	async def flop(self):
-		await self.print_cout("==FLOP::Старт==")
+		await self.print_cout("==FLOP==")
+		self.deal_card()
+		self.table = GameTable()
+		[self.table.place_one_card(self.deck.take_card()) for _ in range(3)]
+		await self.print_cout("Теперь у вас есть карманные карты")
 		self.make_zero_bets()
 		self.place_zero_in_players_actions()
 
 		await self.makeBets()
 
 		self.revert_bets_and_actions()
-		await self.print_cout("==FLOP::Конец==")
-	
+
 	async def turn(self):
-		await self.print_cout("===TURN::Старт===")
+		await self.print_cout("===TURN===")
+		self.table.place_one_card(self.deck.take_card())
 		self.make_zero_bets()
 		self.place_zero_in_players_actions()
 
 		await self.makeBets()
 
 		self.revert_bets_and_actions()
-		await self.print_cout("===TURN::Конец==")
+
+	async def river(self):
+		await self.print_cout("====RIVER====")
+		self.table.place_one_card(self.deck.take_card())
+		self.make_zero_bets()
+		self.place_zero_in_players_actions()
+
+		await self.makeBets()
+
+		self.revert_bets_and_actions()
