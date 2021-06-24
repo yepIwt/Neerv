@@ -4,7 +4,6 @@
 """
 import random
 from thpoker.core import Cards, Combo, Hand, Table
-import asyncio
 
 CARDSUITS = ["Черви","Вини","Буби","Крести"]
 CARDVALUES = ["2","3","4","5","6","7","8","9","10","Валет","Дама","Король","Туз"]
@@ -139,9 +138,18 @@ class Game:
 		return True
 	
 	def bets_and_actions_are_clear(self):
-		zero_bets = [0 for _ in range(len(self.bets))]
-		zero_actions = [0 for _ in range(len(self.players_actions))]
-		if self.bets == zero_bets and self.players_actions == zero_actions:
+		zero = [0 for _ in range(len(self.bets))]
+		actions_are_zero = True
+		for act in self.players_actions:
+			if act != 0 and act != 5:
+				actions_are_zero = False
+				break
+		if self.bets == zero and actions_are_zero == True:
+			return True
+		return False
+	
+	def all_players_are_checked(self):
+		if self.players_actions == [5 for _ in range(len(self.players_actions))]:
 			return True
 		return False
 	
@@ -239,7 +247,6 @@ class Game:
 	async def handle_player_action(self, act: int):
 		self.players_actions[self.cursor] = act
 		if act == 1:
-			#await self.print_cout(f"{self.players[self.cursor].nickname} folds...")
 			await self.fold()
 		elif act == 2:
 			await self.player_bets()
@@ -248,10 +255,20 @@ class Game:
 		elif act == 4:
 			await self.all_in()
 		elif act == 5:
-			pass #check
+			self.cursor = self.player_next_to(self.cursor)
+			if self.all_players_are_checked():
+				self.players_actions = [9 for _ in range(len(self.players_actions))] # fixme
+
+	async def all_in_makeBets(self):
+		while not self.all_in_completed():
+			to_call = self.all_in_bet - self.bets[self.cursor]
+			await self.print_cout(f"Текущий игрок - {self.curr_player().nickname}\nТвой стек: {self.curr_player().money}. Для колла: {to_call}")
+			await self.print_cout(f"Используй команду /action INT для взаимодействия. Доступные для тебя хода: {self.avaliable_player_actions()}")
+			act = await self.get_player_action()
+			await self.handle_player_action(act)
 
 	async def makeBets(self): # while правда
-
+		#self.bets_and_actions_are_clear()
 		while self.bets_and_actions_are_clear() or not self.bets_are_equal() and not self.all_in_bet:
 			await self.print_cout(f"Последняя ставка: {self.player_bet}$")
 			#await self.print_cout(f"Pot: {self.calc_pot()}$")
@@ -261,12 +278,8 @@ class Game:
 			await self.handle_player_action(act)
 
 		if self.all_in_bet:
-			while not self.all_in_completed():
-				to_call = self.all_in_bet - self.bets[self.cursor]
-				await self.print_cout(f"Текущий игрок - {self.curr_player().nickname}\nТвой стек: {self.curr_player().money}. Для колла: {to_call}")
-				await self.print_cout(f"Используй команду /action INT для взаимодействия. Доступные для тебя хода: {self.avaliable_player_actions()}")
-				act = await self.get_player_action()
-				await self.handle_player_action(act)
+			await self.all_in_makeBets()
+
 		await self.print_cout("==============Торги окончены!==============")
 
 	async def preflop(self):
