@@ -5,7 +5,7 @@ from aiogram import Bot, types, executor, Dispatcher
 import asyncio
 import game
 
-TOKEN = "1828679894:AAFaHZN4DEzTgyE1pIZtl5_2g4aVDl0_DT4"
+TOKEN = ""
 CHAT_ID = None
 
 bot = Bot(token=TOKEN)
@@ -63,15 +63,9 @@ async def create_game(message: types.Message):
 	
 	button_nick = poker.players[poker.button_player].nickname
 	await send_info_to_tg(f"Диллер раздачи: {button_nick}")
-
-	# раздача карт
 	
-	poker.make_zero_bets()
-	
-	await send_info_to_tg(f"{poker.bet_small_blind()} ставит малый блайнд...")
-	await send_info_to_tg(f"{poker.bet_big_blind()} ставит большой блайнд...")
-
-	await poker.makeBets()
+	await poker.preflop()
+	await poker.flop()	
 
 @dp.message_handler(commands=['action'])
 async def get_action(message: types.Message):
