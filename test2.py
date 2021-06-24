@@ -65,7 +65,8 @@ async def create_game(message: types.Message):
 	await send_info_to_tg(f"Диллер раздачи: {button_nick}")
 	
 	await poker.preflop()
-	await poker.flop()	
+	await poker.flop()
+	await poker.turn()
 
 @dp.message_handler(commands=['action'])
 async def get_action(message: types.Message):

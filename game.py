@@ -267,8 +267,11 @@ class Game:
 			act = await self.get_player_action()
 			await self.handle_player_action(act)
 
-	async def makeBets(self): # while правда
-		#self.bets_and_actions_are_clear()
+	async def makeBets(self):
+
+		if not self.players: # all folded
+			pass
+
 		while self.bets_and_actions_are_clear() or not self.bets_are_equal() and not self.all_in_bet:
 			await self.print_cout(f"Последняя ставка: {self.player_bet}$")
 			#await self.print_cout(f"Pot: {self.calc_pot()}$")
@@ -281,8 +284,15 @@ class Game:
 			await self.all_in_makeBets()
 
 		await self.print_cout("==============Торги окончены!==============")
+	
+	def revert_bets_and_actions(self):
+		self.all_in_bet = 0
+		self.player_bet = 0
+		self.old_bets.append(self.bets)
+		self.cursor = self.button_player
 
 	async def preflop(self):
+		await self.print_cout("=PREFLOP::Старт=")
 		self.make_zero_bets()
 		self.place_zero_in_players_actions()
 		await self.print_cout(f"{self.bet_small_blind()} ставит малый блайнд...")
@@ -291,16 +301,26 @@ class Game:
 		self.players_actions[self.big_blind_player] = 2	
 		
 		await self.makeBets()
-		# end preflop
-		self.all_in_bet = 0
-		self.player_bet = 0
-		self.old_bets.append(self.bets)
-		self.cursor = self.button_player
+
+		self.revert_bets_and_actions()
+		await self.print_cout("=PREFLOP::Конец=")
 
 	async def flop(self):
-		await self.print_cout("второй ранд торгов")
+		await self.print_cout("==FLOP::Старт==")
 		self.make_zero_bets()
 		self.place_zero_in_players_actions()
 
 		await self.makeBets()
-		await self.print_cout("второй раунд торгов закончен")
+
+		self.revert_bets_and_actions()
+		await self.print_cout("==FLOP::Конец==")
+	
+	async def turn(self):
+		await self.print_cout("===TURN::Старт===")
+		self.make_zero_bets()
+		self.place_zero_in_players_actions()
+
+		await self.makeBets()
+
+		self.revert_bets_and_actions()
+		await self.print_cout("===TURN::Конец==")
