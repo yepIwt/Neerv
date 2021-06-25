@@ -94,6 +94,7 @@ class Game:
 		self.old_bets = []
 		self.players_actions = []
 		self.table = None
+		self.players_combinations = []
 
 	def give_func_to_ask(self, argfunc):
 		self.get_player_action = argfunc
@@ -346,3 +347,33 @@ class Game:
 		await self.makeBets()
 
 		self.revert_bets_and_actions()
+
+	def check_combo(self, hand_cards, table_cards):
+		string_hand_cards = str(hand_cards[0]) + '/' + str(hand_cards[1])
+		string_table_cards = str(table_cards)
+		combo = Combo(hand=Hand(string_hand_cards), table=Table(string_table_cards))
+		return combo
+
+	def best_combo(self):
+		best = self.players_combinations.pop()
+		for comb in self.players_combinations:
+			if best['combo'] < comb['combo']:
+				best = comb
+		return best
+
+	async def end_game(self):
+		await self.print_cout(f"Еще раз, на столе лежат\n{self.table.to_russian()}")
+		await self.print_cout("=====Начианется проверка карт======")
+		for player_cl in self.players:
+			await self.print_cout(f"Проверяем игрока {player_cl.nickname}")
+			combo = self.check_combo(player_cl._handcards, self.table)
+			n = {
+				'id': player_cl.nickname,
+				'combo': combo
+			}
+			await self.print_cout(f"Да я смотрю у тебя тут {combo}")
+			self.players_combinations.append(n)
+		await self.print_cout("==========Определяем победителя==========")
+		best_combination = self.best_combo()
+		await self.print_cout(f"Победитель - {best_combination['id']}")
+		await self.print_cout(f"Выйгрышная комбинация {best_combination['combo']}")

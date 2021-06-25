@@ -60,14 +60,15 @@ async def create_game(message: types.Message):
 
 	poker.choose_dealer()
 	poker.choose_blinds_players()
-	
+
 	button_nick = poker.players[poker.button_player].nickname
 	await send_info_to_tg(f"Диллер раздачи: {button_nick}")
-	
+
 	await poker.preflop()
 	await poker.flop()
 	await poker.turn()
 	await poker.river()
+	await poker.end_game()
 
 @dp.message_handler(commands=['action'])
 async def get_action(message: types.Message):
@@ -84,7 +85,6 @@ async def get_action(message: types.Message):
 		await message.answer(f"Это действие вам не доступно. Доступные действия: {poker.avaliable_player_actions()}")
 	else:
 		event_to_action.set()
-	#await message.reply("", reply=False)
 
 @dp.message_handler(commands=['bet'])
 async def get_bet(message: types.Message):
