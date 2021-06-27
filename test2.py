@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 from aiogram import Bot, types, executor, Dispatcher
-
+from status import StatusBar
 import asyncio
 import game
 
@@ -16,6 +16,8 @@ action = None
 bet = None
 event_to_action = None
 event_to_bet = None
+
+ready_players = []
 
 async def ask_action():
 	global event_to_action, action
@@ -37,38 +39,51 @@ async def send_info_to_tg(text):
 
 @dp.message_handler(commands=['start'])
 async def send_welcome(message: types.Message):
-	await message.answer("Привет\nЭтот бот умеет играть в покер\nИспользуйте /create_game для старта игры")
+	global CHAT_ID
+	CHAT_ID = message.chat.id
+	await message.answer("Привет\nЭтот бот умеет играть в покер\nДля начала вам нужно присоединиться /join")
+
+@dp.message_handler(commands=['join'])
+async def join_the_game(msg: types.Message):
+	global ready_players
+	if msg.from_user.username not in ready_players:
+		ready_players.append(msg.from_user.username)
+		await msg.answer('Игрок зарегистрирован')
+	else:
+		await msg.answer('Вы уже в игре')
 
 @dp.message_handler(commands=['create_game'])
 async def create_game(message: types.Message):
-	global CHAT_ID, poker
+
+	global CHAT_ID, poker, ready_players, bot
 	CHAT_ID = message.chat.id
+	if len(ready_players) > 1:
+		poker = game.Game()
+		poker.give_func_to_ask(ask_action)
+		poker.give_func_to_bet(ask_bet)
+		poker.give_func_to_print(send_info_to_tg)
 
-	poker = game.Game()
-	poker.give_func_to_ask(ask_action)
-	poker.give_func_to_bet(ask_bet)
-	poker.give_func_to_print(send_info_to_tg)
+		#await send_info_to_tg("Neerv - это нервная игра в покер в Телеграме. Берегите свои нервы!")
+		
+		for player in ready_players:
+			poker.add_player(player,10000)
 
-	await send_info_to_tg("Neerv - это нервная игра в покер в Телеграме. Берегите свои нервы!")
-	poker.add_player("Max",1000)
-	poker.add_player("Tim", 2000)
-	poker.add_player("Uli", 3000)
-	poker.add_player("Nick", 4000)
-	poker.add_player("Dim", 5000)
+		await poker.install_gamebar(CHAT_ID, bot)
+		await poker.install_statusbar(CHAT_ID, bot)
 
-	await send_info_to_tg("Игра начинается... ")
+		await send_info_to_tg("Игра начинается... ")
 
-	poker.choose_dealer()
-	poker.choose_blinds_players()
+		poker.choose_dealer()
+		poker.choose_blinds_players()
 
-	button_nick = poker.players[poker.button_player].nickname
-	await send_info_to_tg(f"Диллер раздачи: {button_nick}")
+		await poker.preflop()
+		await poker.flop()
+		await poker.turn()
+		await poker.river()
 
-	await poker.preflop()
-	await poker.flop()
-	await poker.turn()
-	await poker.river()
-	await poker.end_game()
+		await poker.end_game()
+	else:
+	 	await message.answer("Мало игроков")
 
 @dp.message_handler(commands=['action'])
 async def get_action(message: types.Message):
