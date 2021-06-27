@@ -1,49 +1,38 @@
-#!/usr/bin/python
-from aiogram import Bot, types, executor, Dispatcher
-import asyncio
-
-TOKEN = ""
-
-bot = Bot(token = TOKEN)
+"""
+	This is StatusBar for gaming core.
+	Neerv, 2021. yepIwt
+"""
 
 class StatusBar(object):
 
-	def __init__(self, bot: Bot, chat_id: int):
-		self.bot = bot
-		self.chat_id = chat_id
+	async def setup(self, ClassUpper):
+		self.ghost_class = ClassUpper
+		#initialize
+		result = await self.ghost_class.gamebar.api.send_message(
+			chat_id = self.ghost_class.gamebar.chat_id,
+			reply_to_message_id = self.ghost_class.gamebar.message_id,
+			text = 'Статус бар инцидент'
+		)
+		ClassUpper.statusbar.message_id = result.message_id
+		ClassUpper.statusbar.state = self.state
+		await self.pin()
 
 	async def pin(self):
-		await self.bot.pin_chat_message(
-			chat_id = self.chat_id,
-			message_id = self.message_id,
+		await self.ghost_class.gamebar.api.pin_chat_message(
+			chat_id = self.ghost_class.gamebar.chat_id,
+			message_id = self.ghost_class.statusbar.message_id,
 			disable_notification = True
 		)
 
-	async def send_first_message(self):
-		result = await bot.send_message(
-			chat_id = self.chat_id,
-			text = 'Статус бар инцидент'
-		)
-		self.message_id = result.message_id
-		await self.pin()
-	
 	async def state(self, text: str):
-		await bot.edit_message_text(
-			chat_id = self.chat_id, 
-			message_id = self.message_id,
+		await self.ghost_class.gamebar.api.edit_message_text(
+			chat_id = self.ghost_class.gamebar.chat_id, 
+			message_id = self.ghost_class.statusbar.message_id,
 			text = text
 		)
+
 	async def unpin(self):
-		await self.bot.unpin_chat_message(
-			chat_id = self.chat_id,
-			message_id = self.message_id,
+		await self.ghost_class.gamebar.api.unpin_chat_message(
+			chat_id = self.ghost_class.gamebar.chat_id,
+			message_id = self.ghost_class.statusbar.message_id,
 		)
-
-async def main():
-	statusbar = StatusBar(bot, moi_tg_id)
-	await statusbar.send_first_message()
-	await statusbar.pin()
-	await statusbar.state('Статус бар: темплейт')
-	await statusbar.unpin()
-
-asyncio.run(main())
