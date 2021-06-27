@@ -54,7 +54,8 @@ class GameBar(object):
 			pretty_text += f"{self.get_text_action(self.ghost_class.players_actions[i],i)}\n"
 
 		pretty_text += f"\nПоследняя ставка: {self.ghost_class.player_bet}$\n"
-		pretty_text += f"Банк раздачи (POT): {self.ghost_class.calc_pot()}$"	
+		pretty_text += f"Банк раздачи (POT): {self.ghost_class.calc_pot()}$\n\n"
+		pretty_text += f"Предыдущее действие: {self.ghost_class.statusbar.prev_state}"
 
 		await self.ghost_class.gamebar.api.edit_message_text(
 			chat_id = self.ghost_class.gamebar.chat_id,

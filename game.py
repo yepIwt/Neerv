@@ -120,7 +120,6 @@ class Game:
 		self.ask_new_bet = argfunc
 
 	def curr_player(self):
-		print(self.players, "CURSOR: ", self.cursor, "DEALER: ", self.button_player)
 		return self.players[self.cursor]
 
 	def player_next_to(self, next_to: int) -> int:
@@ -145,7 +144,6 @@ class Game:
 		return False
 
 	def all_in_completed(self) -> bool:
-		#print("========ALL IN COMPLETED:", self.bets)
 		for bet_i in range(len(self.bets)):
 			if self.bets[bet_i] == self.all_in_bet:
 				continue
@@ -299,8 +297,9 @@ class Game:
 				await self.print_cout(f"Карты в руках: {first} | {second}")
 				#table cards
 				await self.print_cout(self.table.to_russian())
+
 			await self.gamebar.draw()
-			#await self.print_cout(f"Текущий игрок - {self.curr_player().nickname}\nТвой стек: {self.curr_player().money}")
+			await self.statusbar.state(f"Ход игрока: @{self.curr_player().nickname}")
 			await self.print_cout(f"Используй команду /action INT для взаимодействия. Доступные для тебя хода: {self.avaliable_player_actions()}")
 			act = await self.get_player_action()
 			await self.handle_player_action(act)
@@ -317,14 +316,12 @@ class Game:
 		self.cursor = self.button_player
 
 	async def preflop(self):
-		await self.print_cout("=PREFLOP=")
+		await self.print_cout("Префлоп!")
 		self.make_zero_bets()
 		self.place_zero_in_players_actions()
 		await self.statusbar.state(f"{self.bet_small_blind()} ставит малый блайнд...")
 		await self.statusbar.state(f"{self.bet_big_blind()} ставит большой блайнд...")
 
-		#await self.print_cout(f"{self.bet_small_blind()} ставит малый блайнд...")
-		#await self.print_cout(f"{self.bet_big_blind()} ставит большой блайнд...")
 		self.players_actions[self.small_blind_player] = 6
 		self.players_actions[self.big_blind_player] = 7
 		
@@ -333,7 +330,7 @@ class Game:
 		self.revert_bets_and_actions()
 
 	async def flop(self):
-		await self.print_cout("==FLOP==")
+		await self.print_cout("Флоп!")
 		self.deal_card()
 		self.table = GameTable()
 		[self.table.place_one_card(self.deck.take_card()) for _ in range(3)]
@@ -346,7 +343,7 @@ class Game:
 		self.revert_bets_and_actions()
 
 	async def turn(self):
-		await self.print_cout("===TURN===")
+		await self.print_cout("Тёрн!")
 		self.table.place_one_card(self.deck.take_card())
 		self.make_zero_bets()
 		self.place_zero_in_players_actions()
@@ -356,7 +353,7 @@ class Game:
 		self.revert_bets_and_actions()
 
 	async def river(self):
-		await self.print_cout("====RIVER====")
+		await self.print_cout("Ривер!")
 		self.table.place_one_card(self.deck.take_card())
 		self.make_zero_bets()
 		self.place_zero_in_players_actions()

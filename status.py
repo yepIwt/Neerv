@@ -15,6 +15,7 @@ class StatusBar(object):
 		)
 		ClassUpper.statusbar.message_id = result.message_id
 		ClassUpper.statusbar.state = self.state
+		self.ghost_class.statusbar.prev_state = None
 		await self.pin()
 
 	async def pin(self):
@@ -30,6 +31,7 @@ class StatusBar(object):
 			message_id = self.ghost_class.statusbar.message_id,
 			text = text
 		)
+		self.ghost_class.statusbar.prev_state = text
 
 	async def unpin(self):
 		await self.ghost_class.gamebar.api.unpin_chat_message(
