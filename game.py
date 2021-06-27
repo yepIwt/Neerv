@@ -54,6 +54,9 @@ class Player:
 
 	def take_2_cards(self, cards:tuple):
 		self._handcards = cards
+	
+	def __repr__(self):
+		return self.nickname
 
 class GameTable:
 
@@ -76,14 +79,13 @@ class GameTable:
         string = string[:-1]
         return string
 
-
 class Game:
 
 	def __init__(self):
 		self.players = []
 		self.button_player: int
 		self.game_limit = 20 # размер блайнда стола
-		self._small_blind_player: int
+		self.small_blind_player: int
 		self.big_blind_player: int
 		self.bets: dict
 		self.all_in_bet = 0
@@ -95,6 +97,18 @@ class Game:
 		self.players_actions = []
 		self.table = None
 		self.players_combinations = []
+		self.game_bar_message_id = None
+
+	async def install_gamebar(self, chat_id, bot_api):
+		from gamebar import GameBar
+		self.gamebar = GameBar()
+		await self.gamebar.setup(self, chat_id, bot_api)
+		#await self.gamebar.draw()
+
+	async def install_statusbar(self, chat_id, bot_api):
+		from status import StatusBar
+		self.statusbar = StatusBar()
+		await self.statusbar.setup(self)
 
 	def give_func_to_ask(self, argfunc):
 		self.get_player_action = argfunc
@@ -106,6 +120,7 @@ class Game:
 		self.ask_new_bet = argfunc
 
 	def curr_player(self):
+		print(self.players, "CURSOR: ", self.cursor, "DEALER: ", self.button_player)
 		return self.players[self.cursor]
 
 	def player_next_to(self, next_to: int) -> int:
@@ -228,17 +243,16 @@ class Game:
 		)
 		await self.print_cout(f"{self.curr_player().nickname} фолдит...")
 
-		new_button_initiated = False
-		if self.button_player == self.cursor:
-			# button должен перейти дальше
-			new_button_initiated = True
-
 		self.players.pop(self.cursor)
 		self.bets.pop(self.cursor)
 		self.players_actions.pop(self.cursor)
 
+		if self.cursor < self.button_player:
+			new = self.button_player - 1 % len(self.players)
+			if new < 0: new = len(self.players) - 1
+			self.button_player = new
+
 		if self.cursor >= len(self.players): self.cursor = 0
-		if new_button_initiated: self.button_player = self.cursor
 
 	async def all_in(self):
 		self.bets[self.cursor] += self.curr_player().money
@@ -277,7 +291,6 @@ class Game:
 			pass
 
 		while self.bets_and_actions_are_clear() or not self.bets_are_equal() and not self.all_in_bet:
-			await self.print_cout(f"Последняя ставка: {self.player_bet}$")
 			#await self.print_cout(f"Pot: {self.calc_pot()}$")
 			if self.table:
 				#hand cards
@@ -286,7 +299,8 @@ class Game:
 				await self.print_cout(f"Карты в руках: {first} | {second}")
 				#table cards
 				await self.print_cout(self.table.to_russian())
-			await self.print_cout(f"Текущий игрок - {self.curr_player().nickname}\nТвой стек: {self.curr_player().money}")
+			await self.gamebar.draw()
+			#await self.print_cout(f"Текущий игрок - {self.curr_player().nickname}\nТвой стек: {self.curr_player().money}")
 			await self.print_cout(f"Используй команду /action INT для взаимодействия. Доступные для тебя хода: {self.avaliable_player_actions()}")
 			act = await self.get_player_action()
 			await self.handle_player_action(act)
@@ -306,10 +320,13 @@ class Game:
 		await self.print_cout("=PREFLOP=")
 		self.make_zero_bets()
 		self.place_zero_in_players_actions()
-		await self.print_cout(f"{self.bet_small_blind()} ставит малый блайнд...")
-		await self.print_cout(f"{self.bet_big_blind()} ставит большой блайнд...")
-		self.players_actions[self.small_blind_player] = 2
-		self.players_actions[self.big_blind_player] = 2	
+		await self.statusbar.state(f"{self.bet_small_blind()} ставит малый блайнд...")
+		await self.statusbar.state(f"{self.bet_big_blind()} ставит большой блайнд...")
+
+		#await self.print_cout(f"{self.bet_small_blind()} ставит малый блайнд...")
+		#await self.print_cout(f"{self.bet_big_blind()} ставит большой блайнд...")
+		self.players_actions[self.small_blind_player] = 6
+		self.players_actions[self.big_blind_player] = 7
 		
 		await self.makeBets()
 
