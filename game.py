@@ -207,8 +207,10 @@ class Game:
 			return [1,3]
 		elif self.players[self.cursor].money < self.player_bet:
 			return [1,4]
+		elif self.player_bet == 0:
+			return [1,2,4,5]
 		else:
-			return [1,2,3,4,5]
+			return [1,2,3,4]
 
 	async def player_bets(self):
 		prev_bet = self.player_bet
