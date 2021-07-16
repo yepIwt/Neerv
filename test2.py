@@ -23,36 +23,25 @@ class NeervBot(object):
 		self.event_to_action = None
 		self.action = 0
 
+		self.alias = ['fold','bet','call', 'all-in']
+#need
 	async def send_info_to_tg(self, text: str):
 		await self.bot.send_message(self.CHAT_ID, text)
-
+#fix
 	async def ask_bet(self):
 		self.event_to_bet = asyncio.Event()
 		otvet = asyncio.create_task(self.event_to_bet.wait())
 		await otvet
 
 		return self.bet
-
+#need 
 	async def ask_action(self):
 		self.event_to_action = asyncio.Event()
 		otvet = asyncio.create_task(self.event_to_action.wait())
 		await otvet
 
 		return self.action
-
-	async def get_action(self, message: types.Message):
-		args = message.text.split()
-		try:
-			self.action = int(args[1])
-		except Exception:
-			await message.answer("Нихера не понял")
-			return
-
-		if self.action not in self.poker.avaliable_player_actions():
-			await message.answer(f"Это действие вам не доступно. Доступные действия: {poker.avaliable_player_actions()}")
-		else:
-			self.event_to_action.set()
-
+#fix
 	async def get_bet(self, message: types.Message):
 		args = message.text.split()
 		self.bet = int(args[1])
@@ -63,33 +52,25 @@ class NeervBot(object):
 		else:
 			self.event_to_bet.set()
 			await message.reply("Ставка сделана!", reply=False)
-
+#need
 	async def send_welcome(self, message: types.Message):
 		self.CHAT_ID = message.chat.id
 		await message.answer("Привет\nЭтот бот умеет играть в покер\nДля начала вам нужно присоединиться /join")
-
+#need
 	async def join_the_game(self, message: types.Message):
 		if message.from_user.username not in self.ready_players:
 			self.ready_players.append(message.from_user.username)
 			await message.answer('Игрок зарегистрирован')
 		else:
 			await message.answer('Вы уже в игре')
-
+#need
 	async def create_game(self, message: types.Message):
-		self.CHAT_ID = message.chat.id
-		if len(self.ready_players) > 1:
-			self.poker = game.Game()
-			self.poker.give_func_to_ask(self.ask_action)
-			self.poker.give_func_to_bet(self.ask_bet)
-			self.poker.give_func_to_print(self.send_info_to_tg)
+		r = Room()
+		if r.start_the_game() == True:
+			await r.gamecore.install_gamebar(r.room_chat_id, self.bot)
+			await r.gamecore.install_statusbar(r.room_chat_id, self.bot)
 
-			for player in self.ready_players:
-				self.poker.add_player(player,10000)
-
-			await self.poker.install_gamebar(self.CHAT_ID, self.bot)
-			await self.poker.install_statusbar(self.CHAT_ID, self.bot)
-
-			await self.send_info_to_tg("Игра начинается... ")
+			await r.gamecore.send_info_to_tg("Игра начинается... ")
 
 			self.poker.choose_dealer()
 			self.poker.choose_blinds_players()
@@ -102,7 +83,7 @@ class NeervBot(object):
 			await self.poker.end_game()
 		else:
 			await message.answer("Мало игроков")
-
+#fix
 	def actions_in_stickers(self, actions_list: list, return_names_of_actions = None):
 		fold_button = types.InlineQueryResultCachedSticker(
 			id = hashlib.md5("Fold".encode()).hexdigest(),
@@ -142,16 +123,32 @@ class NeervBot(object):
 			return [fold_button, bet_button, all_in_button, check_button]
 		elif actions_list == [1,2,3,4]:
 			return [fold_button, bet_button, call_button, all_in_button ]
-
+#not need
+	async def send_inline_choose_action(self, iqid):
+		await self.bot.answer_inline_query(
+			iqid,
+			is_personal = True,
+			results = self.actions_in_stickers(self.poker.avaliable_player_actions()),
+			cache_time = 1
+		)
+#fix
 	async def inline_process(self, inline_query):
-		if self.poker:
-			if inline_query.from_user.username == self.poker.curr_player().nickname:
+
+		text = inline_query.query or 'echo'
+
+		if self.poker: # game started
+
+			if text.lower().strip() in self.alias:
+				action = self.alias.index(text.lower().strip())
 				await self.bot.answer_inline_query(
 					inline_query.id,
 					is_personal = True,
-					results = self.actions_in_stickers(self.poker.avaliable_player_actions()),
-					cache_time = 1
+					results = 
 				)
+
+			if inline_query.from_user.username == self.poker.curr_player().nickname:
+				await self.send_inline_choose_action(inline_query.id)
+				
 			else:
 				await self.bot.answer_inline_query(
 					inline_query.id,
@@ -160,7 +157,7 @@ class NeervBot(object):
 					cache_time = 1
 				)
 
-
+#need
 	async def catch_all_messages(self, message: types.Message):
 		
 		if self.poker.curr_player().nickname == message.from_user.username:
